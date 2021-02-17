@@ -1,0 +1,9 @@
+body {
+	background: grey;
+}
+
+img {
+	display: block;
+	width: 500px;
+	margin-top: 50px;
+}
