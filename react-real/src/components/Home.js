@@ -9,7 +9,6 @@ class Home extends Component {
 			// React.Fragment for "no extra div"
 			<React.Fragment>
 				<Nav/>
-				Home
 				<Post/>
 				<Footer/>
 			</React.Fragment>
