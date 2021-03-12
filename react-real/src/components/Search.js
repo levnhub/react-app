@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import Loader from '../Loader.gif';
+import '../Search.css';
 
 class Search extends Component {
 
@@ -17,10 +19,10 @@ class Search extends Component {
 	}
 
 	fetchSearchResults = ( updatedPageNo = '', query ) => {
-		const pageNumber = updatedPageNo ? `&page=4${updatedPageNo}` : '';
+		const pageNumber = updatedPageNo ? `&page=${updatedPageNo}` : '';
 		const searchUrl = `https://pixabay.com/api/?key=699399-f5beeeefea68c4e791581a1e9&q=${query}${pageNumber}`;
 
-		if ( this.cancel ) {
+		if ( this.cancel ) { // Cancel token for Live Search opitimizing
 			this.cancel.cancel();
 		}
 
@@ -30,8 +32,16 @@ class Search extends Component {
 			cancelToken: this.cancel.token
 		} )
 			.then( res => {
-				// const resultNotFoundMsg = 
-				console.log( res.data );
+				// console.log( res.data );
+				const resultNotFoundMsg = ! res.data.hits.length 
+					? 'There are no more search results. Please try a new search.'
+					: '';
+
+				this.setState( {
+					results: res.data.hits,
+					message: resultNotFoundMsg,
+					loading: false
+				} )
 			} )
 			.catch( error => {
 				if ( axios.isCancel(error) || error ) {
@@ -55,13 +65,36 @@ class Search extends Component {
 		} );
 	}
 
+	renderSearchResults = () => {
+		const { results } = this.state; // pull results out from the state
+
+		if ( Object.keys( results ).length && results.length ) {
+			return (
+				<div className="results-container">
+					{ results.map( result => {
+						return (
+							<a key={ result.id } href={ result.previewURL } className="result-item">
+								<h6 className="image-username">{ result.username }</h6>
+								<div className="image-wrapper">
+									<img src={ result.previewURL } alt={ `${result.username} image` } className="image"/>
+								</div>
+							</a>
+						)
+					} ) }
+				</div>
+			)
+		}
+	}
+	
+
 	render() {
 
-		const { query } = this.state;
+		const { query, loading, message } = this.state;
 		// const query = this.state.query; // it's equal for ES5
 
 		return (
 			<React.Fragment>
+				{/* Form */}
 				<form className="form-inline my-2 my-lg-0">
 					<input 
 						className="form-control mr-sm-2" 
@@ -70,10 +103,20 @@ class Search extends Component {
 						value={query} 
 						id="search-input" 
 						onChange={ this.handleOnInputChange }
-						type="text" 
+						type="search" 
+						autoComplete="off"
 					/>
-					<button className="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
+					{/* <button className="btn btn-secondary my-2 my-sm-0" type="submit">Search</button> */}
 				</form>
+
+				<div className={ `results ${ this.state.query ? 'show' : 'hide' }` }>
+					{/* Error message */}
+					{ message && <p className="message">{ message }</p> }
+					{/* Loader */}
+					<img src={ Loader } className={ `search-loading ${ loading ? 'show' : 'hide' }` } alt="Loader"/>
+					{/* Result */}
+					{ this.renderSearchResults() }
+				</div>
 			</React.Fragment>
 		)
 	}
