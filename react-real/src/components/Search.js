@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import axios from 'axios';
 import Loader from '../Loader.gif';
 import '../Search.css';
+import PageNavigation from './PageNavigation';
 
 class Search extends Component {
 
@@ -9,13 +10,22 @@ class Search extends Component {
 		super(props)
 	
 		this.state = {
-			 query: '',
-			 results: {},
-			 loading: false, 
-			 message: ''
+			query: '',
+			results: {},
+			loading: false, 
+			message: '',
+			totalResults: 0,
+			totalPages: 0,
+			currentPageNo: 0,
 		}
 
 		this.cancel = '';
+	}
+
+	getPageCount = ( total, denominator ) => { // pages calculation
+		const divisible = 0 === total % denominator;
+		const valueToBeAdded = divisible ? 0 : 1;
+		return Math.floor( total/denominator ) + valueToBeAdded;
 	}
 
 	fetchSearchResults = ( updatedPageNo = '', query ) => {
@@ -33,6 +43,8 @@ class Search extends Component {
 		} )
 			.then( res => {
 				// console.log( res.data );
+				const total = res.data.total;
+				const totalPagesCount = this.getPageCount( total, 20 );
 				const resultNotFoundMsg = ! res.data.hits.length 
 					? 'There are no more search results. Please try a new search.'
 					: '';
@@ -40,6 +52,9 @@ class Search extends Component {
 				this.setState( {
 					results: res.data.hits,
 					message: resultNotFoundMsg,
+					totalResults: total,
+					totalPages: totalPagesCount,
+					currentPageNo: updatedPageNo,
 					loading: false
 				} )
 			} )
@@ -59,11 +74,31 @@ class Search extends Component {
 		this.setState( { 
 			query: query,
 			loading: true,
-			message: ''
+			message: '',
+			totalPages: 0,
+			totalResults: 0
 		}, () => { // Callback for setState method
 			this.fetchSearchResults( '1', query );
 		} );
 	}
+
+	/**
+	 * Fetch results according to the prev or next page requests.
+	 *
+	 * @param {String} type 'prev' or 'next'
+	 */
+	 handlePageClick = ( type, event ) => {
+		event.preventDefault();
+		const updatePageNo = 'prev' === type
+			? parseInt(this.state.currentPageNo) - 1
+			: parseInt(this.state.currentPageNo) + 1;
+
+		if( ! this.state.loading  ) {
+			this.setState( { loading: true, message: '' }, () => {
+				this.fetchSearchResults( updatePageNo, this.state.query );
+			} );
+		}
+	};
 
 	renderSearchResults = () => {
 		const { results } = this.state; // pull results out from the state
@@ -85,12 +120,13 @@ class Search extends Component {
 			)
 		}
 	}
-	
 
 	render() {
-
-		const { query, loading, message } = this.state;
+		const { query, loading, message, currentPageNo, totalPages } = this.state;
 		// const query = this.state.query; // it's equal for ES5
+
+		const showPrevLink = 1 < currentPageNo;
+		const showNextLink = totalPages > currentPageNo;
 
 		return (
 			<React.Fragment>
@@ -114,8 +150,27 @@ class Search extends Component {
 					{ message && <p className="message">{ message }</p> }
 					{/* Loader */}
 					<img src={ Loader } className={ `search-loading ${ loading ? 'show' : 'hide' }` } alt="Loader"/>
-					{/* Result */}
+
+					{/*Navigation*/}
+					<PageNavigation
+						loading={loading}
+						showPrevLink={showPrevLink}
+						showNextLink={showNextLink}
+						handlePrevClick={ ( event ) => this.handlePageClick('prev', event )}
+						handleNextClick={ ( event ) => this.handlePageClick('next', event )}
+					/>
+
+					{/*	Result*/}
 					{ this.renderSearchResults() }
+
+					{/*Navigation*/}
+					<PageNavigation
+						loading={loading}
+						showPrevLink={showPrevLink}
+						showNextLink={showNextLink}
+						handlePrevClick={ ( event ) => this.handlePageClick('prev', event )}
+						handleNextClick={ ( event ) => this.handlePageClick('next', event )}
+					/>
 				</div>
 			</React.Fragment>
 		)
