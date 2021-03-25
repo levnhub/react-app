@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import Hierarchical from './Hierarchical';
+import Todo from './Todo';
 
 const Home = () => { 
 
@@ -14,9 +16,17 @@ const Home = () => {
 
 	return (
 		<div className="container">
-			<button onClick={ handleOnClick }>Increment Counter</button>
-			<p>{ count }</p>
-			This is home
+			<div className="container-side">
+				<h2 className="main-heading">Counter</h2>
+				<button onClick={ handleOnClick }>Increment Counter</button>
+				<p>{ count }</p>
+			</div>
+			<div className="container-side">
+				<Todo/>
+			</div>
+			<div className="container-side">
+				<Hierarchical/>
+			</div>
 		</div>
 	)
 }
